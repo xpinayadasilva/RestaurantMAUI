@@ -3,7 +3,6 @@ using Restaurant.ConexionDatos;
 using Restaurant.Pages;
 using System.Diagnostics;
 
-
 namespace Restaurant
 {
     public partial class MainPage : ContentPage

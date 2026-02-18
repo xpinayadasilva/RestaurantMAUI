@@ -6,14 +6,11 @@
     xmlns:local="clr-namespace:Restaurant"
     xmlns:pages="clr-namespace:Restaurant.Pages"
     Title="Restaurant">
-
-    <ShellContent
-        Title="Platos"
-        ContentTemplate="{DataTemplate pages:PlatosPage}"
-        Route="PlatosPage" />
+    
+    <!-- Página inicial -->   
     <ShellContent 
         Title="Platos Ofertados"
         Route="ListaPlatosPage"
-        ContentTemplate="{DataTemplate local:ListaPlatosPage}" />
+        ContentTemplate="{DataTemplate pages:ListaPlatosPage}" />
 
 </Shell>

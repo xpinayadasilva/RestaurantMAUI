@@ -11,25 +11,55 @@
                         SelectionMode="Single"
                         SelectionChanged="OnPlatoSeleccionado">
 
+            <!-- 2 tarjetas por fila -->
+            <CollectionView.ItemsLayout>
+                <GridItemsLayout Orientation="Vertical"
+                                 Span="2" />
+            </CollectionView.ItemsLayout>
+
             <CollectionView.ItemTemplate>
                 <DataTemplate>
                     <Frame CornerRadius="16"
-                           Padding="14"
-                           Margin="5"
-                           HasShadow="True">
+                           Padding="12"
+                           Margin="12"
+                           HasShadow="True"
+                           BorderColor="DarkBlue"
+                           BackgroundColor="White">
 
-                        <VerticalStackLayout>
+                        <VerticalStackLayout Spacing="6">
+
+                            <!-- Nombre -->
+                            <Label Text="Nombre del Plato:"
+                                   FontSize="Small"
+                                   TextColor="Purple"/>
+
                             <Label Text="{Binding nombre}"
                                    FontAttributes="Bold"
-                                   FontSize="Medium"/>
+                                   FontSize="Medium"
+                                   TextColor="Black"
+                                   LineBreakMode="TailTruncation"/>
 
-                            <Label Text="{Binding precio, StringFormat='Precio: Bs {0:F2}'}"
-                                   TextColor="Green"/>
+                            <!-- Precio -->
+                            <Label Text="Precio Bs.:"
+                                   FontSize="Small"                                   
+                                   TextColor="Purple"/>
+
+                            <Label Text="{Binding precio, StringFormat='{0:F2}'}"
+                                   FontSize="Medium"
+                                   FontAttributes="Bold"
+                                   TextColor="DarkBlue"/>
+
+                            <!-- Ingredientes -->
+                            <Label Text="Ingredientes:"
+                                   FontSize="Small"
+                                   TextColor="Purple"/>
 
                             <Label Text="{Binding ingredientes}"
                                    FontSize="Small"
                                    LineBreakMode="TailTruncation"
-                                   MaxLines="2"/>
+                                   TextColor="Black"
+                                   MaxLines="3"/>
+
                         </VerticalStackLayout>
 
                     </Frame>

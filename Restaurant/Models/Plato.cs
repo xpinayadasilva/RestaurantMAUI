@@ -9,12 +9,13 @@ namespace Restaurant.Models
 {
     public class Plato
     {
-        /*public int userId { get; set; }
-        public int id { get; set; }
-        public string title { get; set; }
-        public string body { get; set; }*/
+        /*
+        public int id { get; set; }              // id
+        public string nombre { get; set; } = ""; // title
+        public string ingredientes { get; set; } = ""; // body
+        public decimal precio { get; set; } = 0; // ficticio
+        */
 
-       
 
         private int _id;
         public int id

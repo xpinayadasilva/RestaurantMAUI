@@ -21,8 +21,9 @@ namespace Restaurant
 
             builder.Services.AddHttpClient<ConexionDatos.IRestConexionDatos, ConexionDatos.RestConexionDatos>();
             builder.Services.AddTransient<MainPage>();
-            builder.Services.AddTransient<PlatosPage>();
             builder.Services.AddTransient<ListaPlatosPage>();
+            builder.Services.AddTransient<PlatosPage>();
+           
 
 #if DEBUG
             builder.Logging.AddDebug();

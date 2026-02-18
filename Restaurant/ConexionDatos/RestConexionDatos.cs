@@ -1,138 +1,147 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Net;
+using System.Net.Http.Json;
 using Restaurant.Models;
+
 
 namespace Restaurant.ConexionDatos
 {
     public class RestConexionDatos : IRestConexionDatos
     {
-        public readonly HttpClient httpClient;
-        private readonly string dominio;
-        private readonly string url;
-        private readonly JsonSerializerOptions jsonSerializerOptions;
-        public RestConexionDatos(HttpClient httpClient)
+        private readonly HttpClient _http;
+        private const string BaseUrl = "https://jsonplaceholder.typicode.com/posts";
+        public RestConexionDatos(HttpClient http)
         {
-            //httpClient = new HttpClient();
-            this.httpClient = httpClient;
-            //dominio = DeviceInfo.Platform == DevicePlatform.Android? "http://10.0.2.2:5245" : "http://localhost:5245";
-            dominio = DeviceInfo.Platform == DevicePlatform.Android ? "https://jsonplaceholder.typicode.com/posts" : "http://localhost:5245";
-            //url = $"{dominio}/api/v1";
-            url = $"{dominio}";
-            jsonSerializerOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+            _http = http;                       
         }
-        public async Task AddPlato(Plato Plato)
-        {
-            if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
-            {
-                Debug.WriteLine("[RED] No hay acceso a internet");
-                return;
-            }
-            try
-            {
-                string platoJson = JsonSerializer.Serialize<Plato>(Plato, jsonSerializerOptions);
-                StringContent contenido = new StringContent(platoJson, Encoding.UTF8, "application/json");
-                HttpResponseMessage response = await httpClient.PostAsync($"{url}/plato", contenido);
-                if (response.IsSuccessStatusCode)
-                {
-                    Debug.WriteLine("[HTTP] Plato agregado correctamente");
-                }
-                else
-                {
-                    Debug.WriteLine($"[HTTP] Error en la respuesta: {response.StatusCode}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[HTTP] Excepción al registrar plato: {ex.Message}");
-            }
-        }
-
-        public async Task DeletePlato(int id)
-        {
-            if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
-            {
-                Debug.WriteLine("[RED] No hay acceso a internet");
-                return;
-            }
-            try
-            {
-                HttpResponseMessage response = await httpClient.DeleteAsync($"{url}/plato/{id}");
-                if (response.IsSuccessStatusCode)
-                {
-                    Debug.WriteLine("[HTTP] Plato eliminado correctamente");
-                }
-                else
-                {
-                    Debug.WriteLine($"[HTTP] Error en la respuesta: {response.StatusCode}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[HTTP] Excepción al eliminar plato {id}: {ex.Message}");
-            }
-        }
-
+        // GET
         public async Task<List<Plato>> ObtenerPlatos()
         {
-            List<Plato> platos = new List<Plato>();
-            if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
-            {
-                Debug.WriteLine("[RED] No hay acceso a internet");
-                return platos;
-            }
             try
             {
-                HttpResponseMessage response = await httpClient.GetAsync($"{url}/plato");
-                if (response.IsSuccessStatusCode)
+                var response = await _http.GetAsync(BaseUrl);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    string contenido = await response.Content.ReadAsStringAsync();
-                    platos = JsonSerializer.Deserialize<List<Plato>>(contenido, jsonSerializerOptions) ?? new List<Plato>();
+                    throw new HttpRequestException($"Error al obtener platos. Código: {response.StatusCode}");
                 }
-                else
+
+                var posts = await response.Content.ReadFromJsonAsync<List<PostDto>>()
+                            ?? new List<PostDto>();
+
+                var random = new Random();  //para dar precio aleatorio a cada plato
+
+                return posts.Select(p => new Plato
                 {
-                    Debug.WriteLine($"[HTTP] Error en la respuesta: {response.StatusCode}");
-                }
+                    id = p.id,
+                    nombre = p.title,
+                    ingredientes = p.body,
+                    precio = random.Next(50, 151) // ⬅️ entre 50 y 150
+                }).ToList();
+            }
+            catch (HttpRequestException ex)
+            {
+                // Error de red / HTTP
+                throw new Exception("No se pudo conectar al servidor.", ex);
+            }
+            catch (TaskCanceledException ex)
+            {
+                // Timeout
+                throw new Exception("La solicitud tardó demasiado tiempo.", ex);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[HTTP] Excepción al obtener platos: {ex.Message}");
+                // Error inesperado
+                throw new Exception("Ocurrió un error inesperado al obtener los platos.", ex);
             }
-            return platos;
         }
 
-        public async Task UpdatePlato(Plato Plato)
+        // ==========================
+        // POST
+        // ==========================
+        public async Task AddPlato(Plato platoSeleccionado)
         {
-            if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
-            {
-                Debug.WriteLine("[RED] No hay acceso a internet");
-                return;
-            }
             try
             {
-                string platoJson = JsonSerializer.Serialize<Plato>(Plato, jsonSerializerOptions);
-                StringContent contenido = new StringContent(platoJson, Encoding.UTF8, "application/json");
-                HttpResponseMessage response = await httpClient.PutAsync($"{url}/plato/{Plato.id}", contenido);
-                if (response.IsSuccessStatusCode)
+                var post = new PostDto
                 {
-                    Debug.WriteLine("[HTTP] Plato modificado correctamente");
-                }
-                else
+                    title = platoSeleccionado.nombre,
+                    body = platoSeleccionado.ingredientes,
+                    userId = 1
+                };
+
+                var response = await _http.PostAsJsonAsync(BaseUrl, post);
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    Debug.WriteLine($"[HTTP] Error en la respuesta: {response.StatusCode}");
+                    throw new HttpRequestException(
+                        $"Error al agregar plato. Código: {response.StatusCode}");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[HTTP] Excepción al modificar plato: {ex.Message}");
+                throw new Exception("No se pudo agregar el plato.", ex);
             }
+        }
+
+        // ==========================
+        // PUT
+        // ==========================
+        public async Task UpdatePlato(Plato platoSeleccionado)
+        {
+            try
+            {
+                var post = new PostDto
+                {
+                    id = platoSeleccionado.id,
+                    title = platoSeleccionado.nombre,
+                    body = platoSeleccionado.ingredientes,
+                    userId = 1
+                };
+
+                var response = await _http.PutAsJsonAsync($"{BaseUrl}/{platoSeleccionado.id}", post);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException(
+                        $"Error al actualizar plato. Código: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("No se pudo actualizar el plato.", ex);
+            }
+        }
+
+        // ==========================
+        // DELETE
+        // ==========================
+        public async Task DeletePlato(int id)
+        {
+            try
+            {
+                var response = await _http.DeleteAsync($"{BaseUrl}/{id}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException(
+                        $"Error al eliminar plato. Código: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("No se pudo eliminar el plato.", ex);
+            }
+        }
+
+        // ==========================
+        // DTO interno
+        // ==========================
+        private class PostDto
+        {
+            public int userId { get; set; }
+            public int id { get; set; }
+            public string title { get; set; } = "";
+            public string body { get; set; } = "";
         }
     }
 }
